@@ -79,3 +79,55 @@ func Test_Docker_ListContainers_success(t *testing.T) {
 
 	m.AssertExpectations(t)
 }
+
+func Test_Docker_FindContainer_error(t *testing.T) {
+	mockedContainers := []types.Container{
+		{
+			ID:    "dso8fhnlask9_ayo",
+			Names: []string{"i_am_a_container"},
+		},
+		{
+			ID:    "4d8fg4ds5fg4wasd_tokyo",
+			Names: []string{"a_lonely_container"},
+		},
+	}
+
+	m := new(mocked)
+	m.On("ContainerList", mock.Anything, mock.Anything).Return(mockedContainers, nil)
+
+	cli := &Client{
+		cli: m,
+	}
+
+	_, err := cli.FindContainer("invalid_id")
+	require.Error(t, err, "should return an error")
+
+	m.AssertExpectations(t)
+}
+
+func Test_Docker_FindContainer_success(t *testing.T) {
+	mockedContainers := []types.Container{
+		{
+			ID:    "dso8fhnlask9_ayo",
+			Names: []string{"i_am_a_container"},
+		},
+		{
+			ID:    "4d8fg4ds5fg4wasd_tokyo",
+			Names: []string{"a_lonely_container"},
+		},
+	}
+
+	m := new(mocked)
+	m.On("ContainerList", mock.Anything, mock.Anything).Return(mockedContainers, nil)
+
+	cli := &Client{
+		cli: m,
+	}
+
+	container, err := cli.FindContainer("dso8fhnlask9_ayo")
+	require.NoError(t, err, "should not return an error")
+
+	assert.Equal(t, container, mockedContainers[0])
+
+	m.AssertExpectations(t)
+}
