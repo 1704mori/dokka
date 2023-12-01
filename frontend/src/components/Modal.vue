@@ -68,7 +68,7 @@ defineExpose({
       v-if="visible"
       method="dialog"
       :class="{
-        'modal-box rounded-xl border-2 border-slate-400/10 bg-neutral-100 p-4 dark:bg-neutral-900 text-white': true,
+        'modal-box rounded-xl border-2 border-slate-400/10 bg-neutral-100 p-4 dark:bg-neutral-950 text-white': true,
         [props.classes]: props.classes,
       }"
     >
