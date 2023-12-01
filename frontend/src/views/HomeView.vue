@@ -1,7 +1,7 @@
 <template>
   <div class="grid grid-cols-[15rem_1fr] gap-3">
     <div
-      class="flex flex-col items-center gap-3 bg-white dark:bg-black border border-neutral-200 dark:border-neutral-900 px-2 py-3 rounded-md"
+      class="flex flex-col items-center gap-3 bg-white dark:bg-black border border-neutral-200 dark:border-neutral-900 px-2 py-3 rounded-md h-fit"
     >
       <span class="text-lg font-medium">Configuration</span>
       <div class="flex flex-col gap-2 font-medium w-full">
@@ -25,7 +25,7 @@
     <div class="flex flex-col gap-2">
       <div class="grid grid-cols-2 gap-1">
         <Input placeholder="Search..." type="text" />
-        <Select multiple>
+        <Select v-model="status">
           <SelectTrigger>
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, h } from "vue";
+import { ref, h, watchEffect } from "vue";
 import Table from "@/components/Table.vue";
 import Input from "@/components/Input.vue";
 import {
@@ -91,6 +91,8 @@ const columns = ref([
   { key: "actions", label: "Actions" },
 ]);
 
+const status = ref<string>("");
+
 const data = ref<
   {
     id: string;
@@ -101,6 +103,17 @@ const data = ref<
     created_at: string;
   }[]
 >([]);
+const ogData = ref<
+  {
+    id: string;
+    name: string;
+    status: string;
+    image: string;
+    ports: string;
+    created_at: string;
+  }[]
+>([]);
+
 const total = ref(0);
 
 eventSource.onmessage = (event) => {
@@ -114,6 +127,7 @@ eventSource.onmessage = (event) => {
 
   const containerData: Container[] = JSON.parse(_data);
   data.value = transformData(containerData);
+  ogData.value = transformData(containerData);
   total.value = containerData.length;
 };
 
@@ -121,9 +135,39 @@ const handlePageChange = (page: number) => {
   console.log(page);
 };
 
+const handleStopContainer = async (containerId: string) => {
+  const res = await fetch(
+    `http://localhost:7070/v1/container/stop/${containerId}`,
+    {
+      method: "POST",
+    },
+  );
+  const json = await res.json();
+  console.log(json);
+};
+
+watchEffect(() => {
+  if (status.value && status.value != "") {
+    switch (status.value) {
+      case "running":
+        data.value = data.value.filter((f) => /running/.test(f.status));
+        break;
+      case "paused":
+        data.value = data.value.filter((f) => /paused/.test(f.status));
+        break;
+      case "exited":
+        data.value = data.value.filter((f) => /exited/.test(f.status));
+        break;
+
+      default:
+        break;
+    }
+  }
+});
+
 const transformData = (data: Container[]) =>
   data.map((item) => ({
-    id: item.Id.slice(0, 12),
+    id: `<p class="truncate max-w-[8rem]">${item.Id}</p>`,
     name: item.Names[0],
     status: `
       <div class="flex items-center gap-1">
@@ -157,7 +201,13 @@ const transformData = (data: Container[]) =>
         h(TooltipProvider, [
           h(Tooltip, [
             h(TooltipTrigger, { asChild: true }, [
-              h("button", [h(StopCircle, { size: 20 })]),
+              h(
+                "button",
+                {
+                  onClick: () => handleStopContainer(item.Id),
+                },
+                [h(StopCircle, { size: 20 })],
+              ),
             ]),
             h(TooltipContent, ["Stop"]),
           ]),
