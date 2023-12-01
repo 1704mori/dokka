@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-1">
     <div
-      class="space-y-2 md:space-y-0 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg divide-y divide-neutral-200 dark:divide-neutral-800"
+      class="space-y-2 md:space-y-0 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg divide-y divide-neutral-200 dark:divide-neutral-800 overflow-hidden max-h-80 overflow-y-scroll"
     >
       <div
         v-if="!totalData"
@@ -11,7 +11,7 @@
       </div>
 
       <div
-        v-for="(item, index) in (data as any)"
+        v-for="(item, index) in data as any"
         :key="index"
         :class="[
           'bg-neutral-50 dark:bg-neutral-950 px-1 py-1.5 shadow-md flex flex-wrap [@media(min-width:840px)]:grid sm:gap-4',
@@ -20,7 +20,7 @@
         :style="{ gridTemplateColumns: generateGridColumns.join(' ') }"
       >
         <div
-          v-for="(column, columnIndex) in (columns as any)"
+          v-for="(column, columnIndex) in columns as any"
           :key="columnIndex"
           :class="[
             'w-full p-2 mt-auto',
@@ -72,12 +72,6 @@
         </div>
       </div>
     </div>
-
-    <Pagination
-      :total="totalData || data.length"
-      :per-page="rowsPerPage"
-      :onPageClick="onPageClick"
-    />
   </div>
 </template>
 
@@ -125,7 +119,7 @@ export default defineComponent({
     };
 
     const generateGridColumns = columns.value.map((column: any) =>
-      ["id", "actions"].includes(column.key) ? "auto" : "1fr"
+      ["id", "actions"].includes(column.key) ? "auto" : "1fr",
     );
 
     return {
