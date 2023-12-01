@@ -5,18 +5,16 @@
     >
       <div
         v-if="!totalData"
-        class="flex justify-between items-center px-4 py-2 bg-neutral-900"
+        class="flex justify-between items-center px-4 py-2 bg-neutral-950"
       >
-        <p class="text-sm font-medium">
-          {{ totalData }} results found
-        </p>
+        <p class="text-sm font-medium">{{ totalData }} results found</p>
       </div>
 
       <div
         v-for="(item, index) in (data as any)"
         :key="index"
         :class="[
-          'bg-neutral-900 px-1 py-1.5 shadow-md flex flex-wrap [@media(min-width:840px)]:grid sm:gap-4',
+          'bg-neutral-950 px-1 py-1.5 shadow-md flex flex-wrap [@media(min-width:840px)]:grid sm:gap-4',
           className,
         ]"
         :style="{ gridTemplateColumns: generateGridColumns.join(' ') }"
@@ -25,7 +23,7 @@
           v-for="(column, columnIndex) in (columns as any)"
           :key="columnIndex"
           :class="[
-            'w-full p-2',
+            'w-full p-2 mt-auto',
             {
               'max-md:[&:not(:last-child)]:border-b border-neutral-800 self-center truncate':
                 (typeof item[column.key] === 'string' &&
@@ -43,6 +41,14 @@
             class="font-medium"
             v-html="item[column.key]"
           />
+          <div
+            v-if="
+              column.key === 'actions' && typeof item[column.key] != 'string'
+            "
+            class="w-full flex justify-center items-center"
+          >
+            <component :is="item[column.key]" />
+          </div>
 
           <div
             v-if="
