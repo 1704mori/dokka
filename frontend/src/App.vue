@@ -12,7 +12,7 @@ const toggleDark = useToggle(isDark);
 
 <template>
   <Toaster position="bottom-left" theme="dark" />
-  <div class="absolute bottom-8 left-8">
+  <div class="fixed bottom-8 left-8">
     <button
       class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-900 p-2 rounded-full transition-all active:scale-95"
       @click="toggleDark()"
