@@ -164,7 +164,9 @@ watchEffect(() => {
         break;
     }
   }
+});
 
+watchEffect(() => {
   if (search.value == "") {
     console.log("search input is empty, resetting the data array");
     data.value = ogData.value;
@@ -173,7 +175,7 @@ watchEffect(() => {
       new RegExp(search.value, "i").test(f.name),
     );
   }
-});
+})
 
 const transformData = (data: Container[]) =>
   data.map((item) => ({
