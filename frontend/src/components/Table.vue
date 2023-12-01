@@ -4,10 +4,10 @@
       class="space-y-2 md:space-y-0 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg divide-y divide-neutral-200 dark:divide-neutral-800 overflow-hidden max-h-80 overflow-y-scroll"
     >
       <div
-        v-if="!totalData"
+        v-if="!totalData || !data.length"
         class="flex justify-between items-center px-4 py-2 bg-neutral-50 dark:bg-neutral-950"
       >
-        <p class="text-sm font-medium">{{ totalData }} results found</p>
+        <p class="text-sm font-medium">no results found</p>
       </div>
 
       <div
