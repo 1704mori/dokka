@@ -1,11 +1,11 @@
 <template>
   <div class="flex flex-col gap-1">
     <div
-      class="space-y-2 md:space-y-0 bg-background border border-neutral-800 rounded-lg divide-y divide-neutral-800"
+      class="space-y-2 md:space-y-0 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg divide-y divide-neutral-200 dark:divide-neutral-800"
     >
       <div
         v-if="!totalData"
-        class="flex justify-between items-center px-4 py-2 bg-neutral-950"
+        class="flex justify-between items-center px-4 py-2 bg-neutral-50 dark:bg-neutral-950"
       >
         <p class="text-sm font-medium">{{ totalData }} results found</p>
       </div>
@@ -14,7 +14,7 @@
         v-for="(item, index) in (data as any)"
         :key="index"
         :class="[
-          'bg-neutral-950 px-1 py-1.5 shadow-md flex flex-wrap [@media(min-width:840px)]:grid sm:gap-4',
+          'bg-neutral-50 dark:bg-neutral-950 px-1 py-1.5 shadow-md flex flex-wrap [@media(min-width:840px)]:grid sm:gap-4',
           className,
         ]"
         :style="{ gridTemplateColumns: generateGridColumns.join(' ') }"
@@ -25,7 +25,7 @@
           :class="[
             'w-full p-2 mt-auto',
             {
-              'max-md:[&:not(:last-child)]:border-b border-neutral-800 self-center truncate':
+              'max-md:[&:not(:last-child)]:border-b border-neutral-200 dark:border-neutral-800 self-center truncate':
                 (typeof item[column.key] === 'string' &&
                   !isHTMLElement(item[column.key])) ||
                 isHTMLElement(item[column.key]),
