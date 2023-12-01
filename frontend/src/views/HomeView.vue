@@ -24,7 +24,7 @@
     </div>
     <div class="flex flex-col gap-2">
       <div class="grid grid-cols-2 gap-1">
-        <Input placeholder="Search..." type="text" />
+        <Input placeholder="Search..." type="text" v-model="search" />
         <Select v-model="status">
           <SelectTrigger>
             <SelectValue placeholder="Status" />
@@ -92,6 +92,7 @@ const columns = ref([
 ]);
 
 const status = ref<string>("");
+const search = ref<string>("");
 
 const data = ref<
   {
@@ -162,6 +163,15 @@ watchEffect(() => {
       default:
         break;
     }
+  }
+
+  if (search.value == "") {
+    console.log("search input is empty, resetting the data array");
+    data.value = ogData.value;
+  } else {
+    data.value = data.value.filter((f) =>
+      new RegExp(search.value, "i").test(f.name),
+    );
   }
 });
 
