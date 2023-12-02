@@ -4,10 +4,17 @@ RUN corepack enable
 
 WORKDIR /build
 
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm install
 
-COPY frontend .
+COPY frontend ./frontend
+COPY index.html .
+COPY tsconfig* .
+COPY vite* .
+COPY postcss* .
+COPY tailwind* .
+COPY env.d.ts .
+
 RUN npm run build
 
 FROM golang:1.21.4-alpine AS builder
@@ -22,19 +29,19 @@ COPY main.go .
 
 RUN go mod download
 
-COPY --from=node /build/dist ./frontend/dist
+COPY --from=node /build/dist ./dist
 RUN ls -lah
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dokka
 
-RUN mkdir /frontend
+RUN mkdir /dist
 
 FROM alpine:latest
 
 RUN apk add curl
 
 ENV PATH /bin
-COPY --from=node /build/dist /frontend/dist
+COPY --from=node /build/dist /dist
 COPY --from=builder /dokka/dokka /dokka
 
 EXPOSE 7070

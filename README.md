@@ -2,7 +2,7 @@
 
 ## Overview
 
-Dokka is a real-time monitoring tool for Docker containers.
+Dokka is a real-time monitoring and management tool for Docker containers.
 
 ## Table of Contents
 
