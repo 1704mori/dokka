@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently --kill-others \"npm:watch:*\"",
+    "watch:frontend": "vite --open http://localhost:8888",
+    "watch:backend": "DOKKA_PORT=8888 air -c .air.toml",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test:unit": "vitest",
@@ -30,6 +32,7 @@
     "@vue/test-utils": "^2.4.1",
     "@vue/tsconfig": "^0.4.0",
     "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
     "jsdom": "^22.1.0",
     "npm-run-all2": "^6.1.1",
     "postcss": "^8.4.31",

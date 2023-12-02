@@ -8,6 +8,11 @@
         <button
           class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-900 px-3.5 py-1.5 rounded-md"
         >
+          General
+        </button>
+        <button
+          class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-900 px-3.5 py-1.5 rounded-md"
+        >
           Table
         </button>
         <button
@@ -15,16 +20,16 @@
         >
           Authentication
         </button>
-        <button
-          class="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-900 px-3.5 py-1.5 rounded-md"
-        >
-          API
-        </button>
       </div>
     </div>
     <div class="flex flex-col gap-2">
       <div class="grid grid-cols-2 gap-1">
-        <Input placeholder="Search..." type="text" v-model="search" />
+        <Input
+          placeholder="Search..."
+          type="text"
+          v-model="search as string"
+          @input="handleSearch"
+        />
         <Select v-model="status">
           <SelectTrigger>
             <SelectValue placeholder="Status" />
@@ -79,7 +84,12 @@ import type { Container } from "@/lib/types/container";
 import { StopCircle } from "lucide-vue-next";
 import { RotateCcw } from "lucide-vue-next";
 
-const eventSource = new EventSource("http://localhost:7070/v1/containers");
+import { useContainer } from "@/lib/useContainer";
+import { host } from "@/lib/env";
+import { PlayCircle } from "lucide-vue-next";
+import { toast } from "vue-sonner";
+
+const eventSource = new EventSource(`${host}/v1/containers`);
 
 const columns = ref([
   { key: "id", label: "ID" },
@@ -92,7 +102,7 @@ const columns = ref([
 ]);
 
 const status = ref<string>("");
-const search = ref<string>("");
+const search = ref<string | null>(null);
 
 const data = ref<
   {
@@ -118,6 +128,7 @@ const ogData = ref<
 const total = ref(0);
 
 eventSource.onmessage = (event) => {
+  console.log("event", event);
   const [type] = event.data.split(":");
   const [, _data] = event.data.split(`${type}:`);
 
@@ -136,15 +147,37 @@ const handlePageChange = (page: number) => {
   console.log(page);
 };
 
+const handleSearch = (e: any) => {
+  if (e.target.value.trim().length === 0) {
+    data.value = ogData.value;
+  }
+};
+
 const handleStopContainer = async (containerId: string) => {
-  const res = await fetch(
-    `http://localhost:7070/v1/container/stop/${containerId}`,
+  const { data, error } = await useContainer(
+    `/v1/container/stop/${containerId}`,
     {
       method: "POST",
-    },
+    }
   );
-  const json = await res.json();
-  console.log(json);
+
+  console.log(data, error);
+};
+
+const handleStartContainer = async (containerId: string) => {
+  const { data, error } = await useContainer<{ message: string }>(
+    `/v1/container/start/${containerId}`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (error) {
+    toast.error(error, { duration: 5000 });
+    return;
+  }
+
+  toast.success(data?.message || "Container started successfully");
 };
 
 watchEffect(() => {
@@ -167,15 +200,12 @@ watchEffect(() => {
 });
 
 watchEffect(() => {
-  if (search.value == "") {
-    console.log("search input is empty, resetting the data array");
-    data.value = ogData.value;
-  } else {
+  if (search.value && search.value != "") {
     data.value = data.value.filter((f) =>
-      new RegExp(search.value, "i").test(f.name),
+      new RegExp(search.value as string, "i").test(f.name)
     );
   }
-})
+});
 
 const transformData = (data: Container[]) =>
   data.map((item) => ({
@@ -187,12 +217,12 @@ const transformData = (data: Container[]) =>
           item.State === "running"
             ? "bg-green-500"
             : item.State === "paused"
-              ? "bg-yellow-500"
-              : item.State === "exited" ||
-                  item.State === "dead" ||
-                  item.State === "removing"
-                ? "bg-red-500"
-                : "bg-gray-500"
+            ? "bg-yellow-500"
+            : item.State === "exited" ||
+              item.State === "dead" ||
+              item.State === "removing"
+            ? "bg-red-500"
+            : "bg-gray-500"
         }"></div>
         <span>${item.State}</span>
       </div>`,
@@ -200,7 +230,7 @@ const transformData = (data: Container[]) =>
     ports:
       item.Ports.length > 0
         ? item.Ports.map(
-            (port) => `${port.PublicPort}:${port.PrivatePort}`,
+            (port) => `${port.PublicPort}:${port.PrivatePort}`
           ).join(", ")
         : "N/A",
     created_at: new Date(item.Created * 1000).toLocaleDateString(undefined, {
@@ -216,12 +246,19 @@ const transformData = (data: Container[]) =>
               h(
                 "button",
                 {
-                  onClick: () => handleStopContainer(item.Id),
+                  onClick: () =>
+                    item.State == "running"
+                      ? handleStopContainer(item.Id)
+                      : handleStartContainer(item.Id),
                 },
-                [h(StopCircle, { size: 20 })],
+                [
+                  h(item.State == "running" ? StopCircle : PlayCircle, {
+                    size: 20,
+                  }),
+                ]
               ),
             ]),
-            h(TooltipContent, ["Stop"]),
+            h(TooltipContent, [item.State == "running" ? "Stop" : "Start"]),
           ]),
         ]),
         h(TooltipProvider, [

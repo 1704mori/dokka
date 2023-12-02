@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/1704mori/dokka/docker"
+	env "github.com/1704mori/dokka/backend"
+	"github.com/1704mori/dokka/backend/docker"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,7 +40,7 @@ func APIRoutes(router *gin.Engine, dockerClient *docker.Client) {
 					}
 
 					sse <- "data: " + string(marshal) + "\n\n"
-					time.Sleep(5 * time.Second)
+					time.Sleep(time.Duration(env.Args.EventStreamInterval) * time.Second)
 				}
 			}()
 
@@ -99,7 +100,7 @@ func APIRoutes(router *gin.Engine, dockerClient *docker.Client) {
 					"message": fmt.Sprintf("container %s stopped successfully", id),
 				})
 			case "start":
-				_, err = dockerClient.StopContainer(id)
+				_, err = dockerClient.StartContainer(id)
 				if err != nil {
 					ctx.JSON(500, gin.H{
 						"result":  "error",

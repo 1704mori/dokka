@@ -74,6 +74,15 @@ func (d *Client) StopContainer(id string) (bool, error) {
 	return true, nil
 }
 
+func (d *Client) StartContainer(id string) (bool, error) {
+	err := d.cli.ContainerStart(context.Background(), id, types.ContainerStartOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (d *Client) RestartContainer(id string) (bool, error) {
 	err := d.cli.ContainerRestart(context.Background(), id, container.StopOptions{})
 	if err != nil {
