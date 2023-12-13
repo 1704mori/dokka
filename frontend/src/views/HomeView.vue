@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, h, watchEffect } from "vue";
+import { ref, h, watchEffect, onMounted } from "vue";
 import Table from "@/components/Table.vue";
 import Input from "@/components/Input.vue";
 import {
@@ -89,7 +89,43 @@ import { host } from "@/lib/env";
 import { PlayCircle } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 
-const eventSource = new EventSource(`${host}/v1/containers`);
+let eventSource: EventSource;
+
+function startEventSource() {
+  eventSource = new EventSource(`${host}/v1/containers`);
+  eventSource.onopen = () => {
+    console.log("event source opened");
+  };
+
+  eventSource.onerror = (error) => {
+    console.log("event source error", error);
+  };
+}
+
+function restartEventSource() {
+  eventSource.close();
+  startEventSource();
+}
+
+onMounted(() => {
+  startEventSource();
+
+  eventSource.onmessage = (event) => {
+    console.log("event", event);
+    const [type] = event.data.split(":");
+    const [, _data] = event.data.split(`${type}:`);
+
+    if (type == "error:") {
+      console.log(_data);
+      return;
+    }
+
+    const containerData: Container[] = JSON.parse(_data);
+    data.value = transformData(containerData);
+    ogData.value = transformData(containerData);
+    total.value = containerData.length;
+  };
+});
 
 const columns = ref([
   { key: "id", label: "ID" },
@@ -103,6 +139,10 @@ const columns = ref([
 
 const status = ref<string>("");
 const search = ref<string | null>(null);
+
+const loading = ref<{
+  [containerId: string]: boolean;
+}>({});
 
 const data = ref<
   {
@@ -127,22 +167,6 @@ const ogData = ref<
 
 const total = ref(0);
 
-eventSource.onmessage = (event) => {
-  console.log("event", event);
-  const [type] = event.data.split(":");
-  const [, _data] = event.data.split(`${type}:`);
-
-  if (type == "error:") {
-    console.log(_data);
-    return;
-  }
-
-  const containerData: Container[] = JSON.parse(_data);
-  data.value = transformData(containerData);
-  ogData.value = transformData(containerData);
-  total.value = containerData.length;
-};
-
 const handlePageChange = (page: number) => {
   console.log(page);
 };
@@ -154,30 +178,97 @@ const handleSearch = (e: any) => {
 };
 
 const handleStopContainer = async (containerId: string) => {
-  const { data, error } = await useContainer(
-    `/v1/container/stop/${containerId}`,
-    {
+  // loading.value[containerId] = true;
+  // const { data, error } = await useContainer<{ message: string }>(
+  //   `/v1/container/stop/${containerId}`,
+  //   {
+  //     method: "POST",
+  //   },
+  // );
+
+  // if (error) {
+  //   toast.error(error, { duration: 5000 });
+  //   loading.value[containerId] = false;
+  //   return;
+  // }
+
+  // toast.success(data?.message || "Container stopped successfully");
+  // loading.value[containerId] = false;
+  toast.promise(
+    useContainer<{ message: string }>(`/v1/container/stop/${containerId}`, {
       method: "POST",
+    }),
+    {
+      loading: "Stopping container...",
+      success: ({ data }) => {
+        return data?.message || "Container stopped successfully";
+      },
+      error: ({ error }) => error || "Something went wrong",
+      duration: 10000, // the duration is not working the promises so the value is set to 10000
     }
   );
-
-  console.log(data, error);
 };
 
 const handleStartContainer = async (containerId: string) => {
-  const { data, error } = await useContainer<{ message: string }>(
-    `/v1/container/start/${containerId}`,
-    {
+  // loading.value[containerId] = true;
+  // const { data, error } = await useContainer<{ message: string }>(
+  //   `/v1/container/start/${containerId}`,
+  //   {
+  //     method: "POST",
+  //   },
+  // );
+
+  // if (error) {
+  //   toast.error(error, { duration: 5000 });
+  //   loading.value[containerId] = false;
+  //   return;
+  // }
+
+  // toast.success(data?.message || "Container started successfully");
+  // loading.value[containerId] = false;
+  toast.promise(
+    useContainer<{ message: string }>(`/v1/container/start/${containerId}`, {
       method: "POST",
+    }),
+    {
+      loading: "Starting container...",
+      success: ({ data }) => {
+        return data?.message || "Container started successfully";
+      },
+      error: ({ error }) => error || "Something went wrong",
     }
   );
+};
 
-  if (error) {
-    toast.error(error, { duration: 5000 });
-    return;
-  }
+const handleRestartContainer = async (containerId: string) => {
+  // loading.value[containerId] = true;
+  // const { data, error } = await useContainer<{ message: string }>(
+  //   `/v1/container/restart/${containerId}`,
+  //   {
+  //     method: "POST",
+  //   },
+  // );
 
-  toast.success(data?.message || "Container started successfully");
+  // if (error) {
+  //   toast.error(error, { duration: 5000 });
+  //   loading.value[containerId] = false;
+  //   return;
+  // }
+
+  // toast.success(data?.message || "Container restarted successfully");
+  // loading.value[containerId] = false;
+  toast.promise(
+    useContainer<{ message: string }>(`/v1/container/restart/${containerId}`, {
+      method: "POST",
+    }),
+    {
+      loading: "Restarting container...",
+      success: ({ data }) => {
+        return data?.message || "Container restarted successfully";
+      },
+      error: ({ error }) => error || "Something went wrong",
+    }
+  );
 };
 
 watchEffect(() => {
@@ -214,7 +305,7 @@ const transformData = (data: Container[]) =>
     status: `
       <div class="flex items-center gap-1">
         <div class="w-2 h-2 rounded-full ${
-          item.State === "running"
+          !loading.value[item.Id] && item.State === "running"
             ? "bg-green-500"
             : item.State === "paused"
             ? "bg-yellow-500"
@@ -224,7 +315,11 @@ const transformData = (data: Container[]) =>
             ? "bg-red-500"
             : "bg-gray-500"
         }"></div>
-        <span>${item.State}</span>
+        ${
+          !loading.value[item.Id]
+            ? `<span>${item.State}</span>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-loader-2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`
+        }
       </div>`,
     image: item.Image,
     ports:
@@ -264,7 +359,13 @@ const transformData = (data: Container[]) =>
         h(TooltipProvider, [
           h(Tooltip, [
             h(TooltipTrigger, { asChild: true }, [
-              h("button", [h(RotateCcw, { size: 20 })]),
+              h(
+                "button",
+                {
+                  onClick: () => handleRestartContainer(item.Id),
+                },
+                [h(RotateCcw, { size: 20 })]
+              ),
             ]),
             h(TooltipContent, ["Restart"]),
           ]),
