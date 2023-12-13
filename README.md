@@ -49,6 +49,11 @@ Dokka can be configured using environment variables.
 go test ./...
 ```
 
+## Todo
+
+- [ ] Make the side menu actually functional
+- [ ] Logging?
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
